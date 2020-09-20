@@ -86,14 +86,18 @@ pipeline {
       }
 
       options {
-        timeout(time: 15, unit: 'MINUTES')
+        timeout(time: 25, unit: 'MINUTES')
         retry(2)
         timestamps()
       }
 
       environment {
         HOME = "/tmp/home/"
-        TEST_FILE = "test/test-localhost-remote.yaml"
+//        GCLOUD_SERVICE_KEY = credentials("${ENVIRONMENT}_gcp_credentials")
+        GCLOUD_SERVICE_KEY = credentials("gcp-iam-master_gcp_credentials")
+        BASE64_GOOGLE_CREDENTIALS = credentials("gcp-iam-master_gcp_credentials")
+        GOOGLE_PROJECT_ID = 'controlplane-dev-2'
+        GOOGLE_COMPUTE_ZONE = 'europe-west1-b'
       }
 
       steps {
@@ -102,6 +106,15 @@ pipeline {
             set -euxo pipefail
 
             EXIT_CODE=0
+
+            # required for terraform and terratest to authenticate correctly
+            export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcloud.json"
+            echo "${BASE64_GOOGLE_CREDENTIALS}" | base64 -d > "\${GOOGLE_APPLICATION_CREDENTIALS}"
+
+            # required for gcloud and kubectl to authenticate correctly
+            gcloud auth activate-service-account --key-file="\${GOOGLE_APPLICATION_CREDENTIALS}"
+            gcloud --quiet config set project "${GOOGLE_PROJECT_ID}"
+            gcloud --quiet config set compute/zone "${GOOGLE_COMPUTE_ZONE}"
 
             if ! make cluster; then
               make cluster-kill cluster

@@ -53,6 +53,8 @@ export NAME DOCKER_HUB_URL BUILD_DATE GIT_MESSAGE GIT_SHA GIT_TAG \
 ### github.com/controlplaneio/ensure-content.git makefile-header END ###
 
 TEST_FILE := "test/test-localhost-remote.yaml"
+TEST_GKE_CLUSTER := "netassert-test-2"
+TEST_CLUSTER_ZONE := "europe-west2-a"
 
 define start_task
 @echo "--------------------------------------------------------------------------------"
@@ -78,29 +80,35 @@ all: help
 .PHONY: cluster
 cluster: ## creates a test GKE cluster
 	$(call start_task,"$@")
-	gcloud container clusters create \
-		--zone europe-west2-a \
-		--machine-type n1-highcpu-16 \
-		--enable-autorepair \
-		--no-enable-legacy-authorization \
-		--no-enable-ip-alias \
-		--no-enable-autoupgrade \
-		--num-nodes 1 \
-		--preemptible \
-		--enable-network-policy \
-		--enable-binauthz \
-		--enable-shielded-nodes \
-		--shielded-integrity-monitoring \
-		--shielded-secure-boot \
-		netassert-test-2
+	if [[ 0 == $$(gcloud container clusters list --filter="name=('netassert-test')" | wc -l) ]]; then \
+			gcloud container clusters create \
+				--zone $(TEST_CLUSTER_ZONE) \
+				--machine-type n1-highcpu-16 \
+				--enable-autorepair \
+				--no-enable-legacy-authorization \
+				--no-enable-ip-alias \
+				--no-enable-autoupgrade \
+				--num-nodes 1 \
+				--preemptible \
+				--enable-network-policy \
+				--enable-binauthz \
+				--enable-shielded-nodes \
+				--shielded-integrity-monitoring \
+				--shielded-secure-boot \
+				$(TEST_GKE_CLUSTER); \
+	fi
+
+	set -x; gcloud container clusters get-credentials $(TEST_GKE_CLUSTER) \
+		--zone $(TEST_CLUSTER_ZONE)
+	kubectl version
 	$(call end_task,"$@")
 
 .PHONY: cluster-kill
 cluster-kill: ## deletes a test GKE cluster
 	$(call start_task,"$@")
-	yes | gcloud container clusters delete \
-		--zone europe-west2-a \
-		netassert-test
+	yes | echo gcloud container clusters delete \
+		--zone $(TEST_CLUSTER_ZONE) \
+		$(TEST_GKE_CLUSTER)
 	$(call end_task,"$@")
 
 .PHONY:
