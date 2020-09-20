@@ -53,7 +53,7 @@ export NAME DOCKER_HUB_URL BUILD_DATE GIT_MESSAGE GIT_SHA GIT_TAG \
 ### github.com/controlplaneio/ensure-content.git makefile-header END ###
 
 TEST_FILE := "test/test-localhost-remote.yaml"
-TEST_GKE_CLUSTER := "netassert-test-2"
+TEST_GKE_CLUSTER := "netassert-test-3"
 TEST_CLUSTER_ZONE := "europe-west2-a"
 
 define start_task
@@ -80,7 +80,7 @@ all: help
 .PHONY: cluster
 cluster: ## creates a test GKE cluster
 	$(call start_task,"$@")
-	if [[ 0 == $$(gcloud container clusters list --filter="name=('netassert-test')" | wc -l) ]]; then \
+	set -x; if [[ 0 == $$(gcloud container clusters list --filter="name=('$(TEST_GKE_CLUSTER)')" | wc -l) ]]; then \
 			gcloud container clusters create \
 				--zone $(TEST_CLUSTER_ZONE) \
 				--machine-type n1-highcpu-16 \
@@ -91,13 +91,9 @@ cluster: ## creates a test GKE cluster
 				--num-nodes 1 \
 				--preemptible \
 				--enable-network-policy \
-				--enable-binauthz \
-				--enable-shielded-nodes \
-				--shielded-integrity-monitoring \
-				--shielded-secure-boot \
 				$(TEST_GKE_CLUSTER); \
-	fi
-
+	fi; \
+	\
 	set -x; gcloud container clusters get-credentials $(TEST_GKE_CLUSTER) \
 		--zone $(TEST_CLUSTER_ZONE)
 	kubectl version
@@ -113,9 +109,9 @@ cluster-kill: ## deletes a test GKE cluster
 
 .PHONY:
 test-unit: ## Runs unit tests for javascript
-	$(call start_task,"$@")
-	@npm run test:unit -s
-	$(call end_task,"$@")
+		$(call start_task,"$@")
+		npm run test:unit -s || true
+		$(call end_task,"$@")
 
 .PHONY: build
 build: ## builds a docker image
@@ -223,7 +219,7 @@ test: test-unit ## build, test, and push container, then run local tests
 	$(call start_task,"$@")
 
 	# test against local container
-#	make test-local-docker
+		#	make test-local-docker
 
 	# test against remote hosts
 	make test-deploy-k8s

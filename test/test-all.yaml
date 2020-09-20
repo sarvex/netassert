@@ -15,12 +15,14 @@ host:
       - -UDP:555
       - -UDP:1234
 
-  jenkins.ctlplane.io:
-    8.8.8.8: UDP:53
-    8.8.4.4: UDP:53
-    google.com: 443
-    localhost:
-      - -999
+#  jenkins.ctlplane.io:
+#    8.8.8.8: UDP:53
+#    8.8.4.4: UDP:53
+#    google.com: 443
+#    localhost:
+#      - -999
+#
+
 k8s:
   deployment:
     default:test-frontend:

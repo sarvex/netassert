@@ -98,6 +98,7 @@ pipeline {
         BASE64_GOOGLE_CREDENTIALS = credentials("gcp-iam-master_gcp_credentials")
         GOOGLE_PROJECT_ID = 'controlplane-dev-2'
         GOOGLE_COMPUTE_ZONE = 'europe-west1-b'
+        DOCKER_REGISTRY_CREDENTIALS = credentials("${ENVIRONMENT}_docker_credentials")
       }
 
       steps {
@@ -106,6 +107,9 @@ pipeline {
             set -euxo pipefail
 
             EXIT_CODE=0
+
+            rm -rf /tmp/home/
+            mkdir -p /tmp/home/
 
             # required for terraform and terratest to authenticate correctly
             export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcloud.json"
@@ -119,6 +123,11 @@ pipeline {
             if ! make cluster; then
               make cluster-kill cluster
             fi
+
+            echo '${DOCKER_REGISTRY_CREDENTIALS_PSW}' \\
+            | docker login \\
+              --username '${DOCKER_REGISTRY_CREDENTIALS_USR}' \\
+              --password-stdin
 
             if ! make test; then
               EXIT_CODE=1

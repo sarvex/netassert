@@ -397,7 +397,7 @@ ssh_to_node() {
     if is_empty "${HOST-}"; then
       error "Host not found for ${NAMESPACE}:${TARGET}: 'gcloud compute instances list' was empty"
     fi
-    CONNECTION="gcloud compute ssh ${HOST} -- -t ${SSH_USER_OPTIONS} ${SSH_DEFAULT_OPTIONS} "
+    CONNECTION="gcloud compute ssh --force-key-file-overwrite ${HOST} -- -t ${SSH_USER_OPTIONS} ${SSH_DEFAULT_OPTIONS} "
   else
     if [[ -n "${SSH_USER}" ]]; then
       HOST="${SSH_USER}@${HOST}"
